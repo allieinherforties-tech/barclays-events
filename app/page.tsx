@@ -20,10 +20,24 @@ export default function Home() {
     fetch('/api/events')
       .then(res => res.json())
       .then(data => {
+        // Filter future events
         const futureEvents = (data.events || []).filter((e: Event) => 
           isFuture(startOfDay(parseISO(e.dates.start.localDate)))
         );
-        setEvents(futureEvents);
+        
+        // Deduplicate events by name + date
+        const uniqueEvents = futureEvents.reduce((acc: Event[], event: Event) => {
+          const key = `${event.name.toLowerCase().trim()}-${event.dates.start.localDate}`;
+          const exists = acc.some(e => 
+            `${e.name.toLowerCase().trim()}-${e.dates.start.localDate}` === key
+          );
+          if (!exists) {
+            acc.push(event);
+          }
+          return acc;
+        }, []);
+        
+        setEvents(uniqueEvents);
         setLoading(false);
       });
   }, []);
