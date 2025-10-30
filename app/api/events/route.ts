@@ -17,10 +17,22 @@ export async function GET() {
     const data = await response.json();
     const events = data._embedded?.events || [];
 
+    // Deduplicate events by name + date
+    const uniqueEvents = events.reduce((acc: any[], event: any) => {
+      const key = `${event.name.toLowerCase().trim()}-${event.dates.start.localDate}`;
+      const exists = acc.some(e => 
+        `${e.name.toLowerCase().trim()}-${e.dates.start.localDate}` === key
+      );
+      if (!exists) {
+        acc.push(event);
+      }
+      return acc;
+    }, []);
+
     return NextResponse.json({
       success: true,
-      count: events.length,
-      events
+      count: uniqueEvents.length,
+      events: uniqueEvents
     });
   } catch (error) {
     console.error('API Error:', error);
