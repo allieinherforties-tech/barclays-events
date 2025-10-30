@@ -3,6 +3,15 @@ import { NextResponse } from 'next/server';
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 const TICKETMASTER_VENUE_ID = process.env.TICKETMASTER_VENUE_ID || 'KovZ917AtP3';
 
+// Normalize event name for better duplicate detection
+function normalizeEventName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[:\-–—]/g, ' ') // Replace colons, hyphens, dashes with space
+    .replace(/\s+/g, ' ')       // Collapse multiple spaces
+    .trim();
+}
+
 export async function GET() {
   try {
     const response = await fetch(
@@ -17,12 +26,16 @@ export async function GET() {
     const data = await response.json();
     const events = data._embedded?.events || [];
 
-    // Deduplicate events by name + date
+    // Deduplicate events by normalized name + date
     const uniqueEvents = events.reduce((acc: any[], event: any) => {
-      const key = `${event.name.toLowerCase().trim()}-${event.dates.start.localDate}`;
-      const exists = acc.some(e => 
-        `${e.name.toLowerCase().trim()}-${e.dates.start.localDate}` === key
-      );
+      const normalizedName = normalizeEventName(event.name);
+      const key = `${normalizedName}-${event.dates.start.localDate}`;
+      
+      const exists = acc.some(e => {
+        const existingNormalizedName = normalizeEventName(e.name);
+        return `${existingNormalizedName}-${e.dates.start.localDate}` === key;
+      });
+      
       if (!exists) {
         acc.push(event);
       }
