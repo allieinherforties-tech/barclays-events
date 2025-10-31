@@ -20,12 +20,10 @@ export default function Home() {
     fetch('/api/events')
       .then(res => res.json())
       .then(data => {
-        // Filter future events
         const futureEvents = (data.events || []).filter((e: Event) => 
           isFuture(startOfDay(parseISO(e.dates.start.localDate)))
         );
         
-        // Deduplicate events by name + date
         const uniqueEvents = futureEvents.reduce((acc: Event[], event: Event) => {
           const key = `${event.name.toLowerCase().trim()}-${event.dates.start.localDate}`;
           const exists = acc.some(e => 
@@ -44,7 +42,12 @@ export default function Home() {
 
   const todayEvents = events.filter(e => isToday(parseISO(e.dates.start.localDate)));
   const weekEvents = events.filter(e => isThisWeek(parseISO(e.dates.start.localDate)) && !isToday(parseISO(e.dates.start.localDate)));
-  const monthEvents = events.filter(e => isThisMonth(parseISO(e.dates.start.localDate)) && !isThisWeek(parseISO(e.dates.start.localDate)));
+  // Fixed: Only show month events that are NOT in this week at all
+  const monthEvents = events.filter(e => 
+    isThisMonth(parseISO(e.dates.start.localDate)) && 
+    !isThisWeek(parseISO(e.dates.start.localDate)) &&
+    !isToday(parseISO(e.dates.start.localDate))
+  );
   const futureEvents = events.filter(e => !isThisMonth(parseISO(e.dates.start.localDate)));
 
   const getImage = (event: Event) => event.images?.[0]?.url || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80';
@@ -54,7 +57,7 @@ export default function Home() {
       <div style={{minHeight: '100vh', background: '#faf9f7', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
         <div style={{textAlign: 'center'}}>
           <div style={{width: '48px', height: '48px', border: '3px solid #e8e6e1', borderTop: '3px solid #7a9b8e', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px'}}></div>
-          <p style={{color: '#5a5a5a', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif'}}>Loading events...</p>
+          <p style={{color: '#5a5a7a', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif'}}>Loading events...</p>
         </div>
       </div>
     );
@@ -64,6 +67,10 @@ export default function Home() {
     <div style={{minHeight: '100vh', background: '#faf9f7', fontFamily: 'system-ui, -apple-system, sans-serif'}}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.1); }
+        }
         .event-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .event-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
       `}</style>
@@ -78,29 +85,33 @@ export default function Home() {
 
       <main style={{maxWidth: '1200px', margin: '0 auto', padding: '40px 20px'}}>
         
-        {/* TODAY SPOTLIGHT */}
+        {/* TONIGHT HERO - Full Width */}
         {todayEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
-              <div style={{width: '8px', height: '8px', background: '#c87d5c', borderRadius: '50%'}}></div>
-              <h2 style={{fontSize: '28px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>Tonight</h2>
+            <div style={{background: 'linear-gradient(135deg, #c87d5c 0%, #d4a574 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(200,125,92,0.2)'}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
+                <div style={{width: '12px', height: '12px', background: 'white', borderRadius: '50%', animation: 'pulse 2s infinite'}}></div>
+                <h2 style={{fontSize: '36px', fontWeight: '700', color: 'white', margin: 0, letterSpacing: '-0.5px'}}>Tonight at Barclays</h2>
+              </div>
+              <p style={{color: 'rgba(255,255,255,0.9)', fontSize: '18px', margin: 0}}>Happening right now in Brooklyn</p>
             </div>
+
             <div style={{display: 'grid', gridTemplateColumns: todayEvents.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
               {todayEvents.map(event => (
-                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)'}}>
-                  <div style={{height: '280px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative'}}>
-                    <div style={{position: 'absolute', top: '16px', right: '16px', background: '#c87d5c', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Tonight</div>
+                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '2px solid #c87d5c'}}>
+                  <div style={{height: '320px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative'}}>
+                    <div style={{position: 'absolute', top: '20px', right: '20px', background: '#c87d5c', color: 'white', padding: '10px 20px', borderRadius: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'}}>TONIGHT</div>
                   </div>
-                  <div style={{padding: '28px'}}>
-                    <div style={{display: 'inline-block', background: '#f4f3f1', color: '#7a9b8e', padding: '6px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
+                  <div style={{padding: '32px'}}>
+                    <div style={{display: 'inline-block', background: '#fef3ef', color: '#c87d5c', padding: '8px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                       {event.classifications?.[0]?.segment?.name || 'Event'}
                     </div>
-                    <h3 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', marginBottom: '16px', lineHeight: '1.3'}}>{event.name}</h3>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px', color: '#7a7a7a', fontSize: '14px'}}>
-                      {event.dates.start.localTime && <div>🕐 {event.dates.start.localTime}</div>}
-                      {event.priceRanges?.[0] && <div>💵 ${event.priceRanges[0].min} - ${event.priceRanges[0].max}</div>}
+                    <h3 style={{fontSize: '26px', fontWeight: '700', color: '#2d2d2d', marginBottom: '16px', lineHeight: '1.2'}}>{event.name}</h3>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px', color: '#7a7a7a', fontSize: '15px'}}>
+                      {event.dates.start.localTime && <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{fontSize: '18px'}}>🕐</span> <strong>{event.dates.start.localTime}</strong></div>}
+                      {event.priceRanges?.[0] && <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{fontSize: '18px'}}>💵</span> ${event.priceRanges[0].min} - ${event.priceRanges[0].max}</div>}
                     </div>
-                    <a href={event.url} target="_blank" rel="noopener" style={{display: 'block', background: '#2d2d2d', color: 'white', padding: '14px', borderRadius: '10px', textAlign: 'center', textDecoration: 'none', fontWeight: '600', fontSize: '15px'}}>Get Tickets</a>
+                    <a href={event.url} target="_blank" rel="noopener" style={{display: 'block', background: '#c87d5c', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', fontWeight: '700', fontSize: '16px', boxShadow: '0 4px 12px rgba(200,125,92,0.3)'}}>Get Tickets →</a>
                   </div>
                 </div>
               ))}
