@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { format, parseISO, isToday, isThisWeek, isThisMonth, isFuture, startOfDay } from 'date-fns';
+import { format, parseISO, isThisWeek, isThisMonth, startOfDay } from 'date-fns';
 
 interface Event {
   id: string;
@@ -20,11 +20,13 @@ export default function Home() {
     fetch('/api/events')
       .then(res => res.json())
       .then(data => {
-        const futureEvents = (data.events || []).filter((e: Event) => 
-          isFuture(startOfDay(parseISO(e.dates.start.localDate)))
-        );
+        const relevantEvents = (data.events || []).filter((e: Event) => {
+          const eventDate = startOfDay(parseISO(e.dates.start.localDate));
+          const today = startOfDay(new Date());
+          return eventDate >= today;
+        });
         
-        const uniqueEvents = futureEvents.reduce((acc: Event[], event: Event) => {
+        const uniqueEvents = relevantEvents.reduce((acc: Event[], event: Event) => {
           const key = `${event.name.toLowerCase().trim()}-${event.dates.start.localDate}`;
           const exists = acc.some(e => 
             `${e.name.toLowerCase().trim()}-${e.dates.start.localDate}` === key
@@ -40,15 +42,21 @@ export default function Home() {
       });
   }, []);
 
-  const todayEvents = events.filter(e => isToday(parseISO(e.dates.start.localDate)));
-  const weekEvents = events.filter(e => isThisWeek(parseISO(e.dates.start.localDate)) && !isToday(parseISO(e.dates.start.localDate)));
-  // Fixed: Only show month events that are NOT in this week at all
+  // Use direct date string comparison instead of isToday()
+  const todayDateString = format(new Date(), 'yyyy-MM-dd');
+  const todayEvents = events.filter(e => e.dates.start.localDate === todayDateString);
+  const weekEvents = events.filter(e => isThisWeek(parseISO(e.dates.start.localDate)) && e.dates.start.localDate !== todayDateString);
   const monthEvents = events.filter(e => 
     isThisMonth(parseISO(e.dates.start.localDate)) && 
     !isThisWeek(parseISO(e.dates.start.localDate)) &&
-    !isToday(parseISO(e.dates.start.localDate))
+    e.dates.start.localDate !== todayDateString
   );
   const futureEvents = events.filter(e => !isThisMonth(parseISO(e.dates.start.localDate)));
+
+  const nextEvent = events[0];
+  const heroEvents = todayEvents.length > 0 ? todayEvents : (nextEvent ? [nextEvent] : []);
+  const heroTitle = todayEvents.length > 0 ? 'Tonight at Barclays' : 'Next at Barclays';
+  const heroSubtitle = todayEvents.length > 0 ? 'Happening right now in Brooklyn' : nextEvent ? `${format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')}` : '';
 
   const getImage = (event: Event) => event.images?.[0]?.url || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80';
 
@@ -57,7 +65,7 @@ export default function Home() {
       <div style={{minHeight: '100vh', background: '#faf9f7', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
         <div style={{textAlign: 'center'}}>
           <div style={{width: '48px', height: '48px', border: '3px solid #e8e6e1', borderTop: '3px solid #7a9b8e', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px'}}></div>
-          <p style={{color: '#5a5a7a', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif'}}>Loading events...</p>
+          <p style={{color: '#5a5a5a', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif'}}>Loading events...</p>
         </div>
       </div>
     );
@@ -85,22 +93,24 @@ export default function Home() {
 
       <main style={{maxWidth: '1200px', margin: '0 auto', padding: '40px 20px'}}>
         
-        {/* TONIGHT HERO - Full Width */}
-        {todayEvents.length > 0 && (
+        {/* HERO SECTION - Always shows Tonight or Next */}
+        {heroEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{background: 'linear-gradient(135deg, #c87d5c 0%, #d4a574 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(200,125,92,0.2)'}}>
               <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
-                <div style={{width: '12px', height: '12px', background: 'white', borderRadius: '50%', animation: 'pulse 2s infinite'}}></div>
-                <h2 style={{fontSize: '36px', fontWeight: '700', color: 'white', margin: 0, letterSpacing: '-0.5px'}}>Tonight at Barclays</h2>
+                {todayEvents.length > 0 && <div style={{width: '12px', height: '12px', background: 'white', borderRadius: '50%', animation: 'pulse 2s infinite'}}></div>}
+                <h2 style={{fontSize: '36px', fontWeight: '700', color: 'white', margin: 0, letterSpacing: '-0.5px'}}>{heroTitle}</h2>
               </div>
-              <p style={{color: 'rgba(255,255,255,0.9)', fontSize: '18px', margin: 0}}>Happening right now in Brooklyn</p>
+              <p style={{color: 'rgba(255,255,255,0.9)', fontSize: '18px', margin: 0}}>{heroSubtitle}</p>
             </div>
 
-            <div style={{display: 'grid', gridTemplateColumns: todayEvents.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
-              {todayEvents.map(event => (
+            <div style={{display: 'grid', gridTemplateColumns: heroEvents.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
+              {heroEvents.map(event => (
                 <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '2px solid #c87d5c'}}>
                   <div style={{height: '320px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative'}}>
-                    <div style={{position: 'absolute', top: '20px', right: '20px', background: '#c87d5c', color: 'white', padding: '10px 20px', borderRadius: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'}}>TONIGHT</div>
+                    <div style={{position: 'absolute', top: '20px', right: '20px', background: '#c87d5c', color: 'white', padding: '10px 20px', borderRadius: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'}}>
+                      {todayEvents.length > 0 ? 'TONIGHT' : format(parseISO(event.dates.start.localDate), 'MMM d').toUpperCase()}
+                    </div>
                   </div>
                   <div style={{padding: '32px'}}>
                     <div style={{display: 'inline-block', background: '#fef3ef', color: '#c87d5c', padding: '8px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
@@ -119,15 +129,15 @@ export default function Home() {
           </section>
         )}
 
-        {/* THIS WEEK */}
-        {weekEvents.length > 0 && (
+        {/* THIS WEEK - Exclude hero events */}
+        {weekEvents.filter(e => !heroEvents.some(h => h.id === e.id)).length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
               <div style={{width: '8px', height: '8px', background: '#7a9b8e', borderRadius: '50%'}}></div>
               <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Week</h2>
             </div>
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px'}}>
-              {weekEvents.slice(0, 6).map(event => (
+              {weekEvents.filter(e => !heroEvents.some(h => h.id === e.id)).slice(0, 6).map(event => (
                 <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
                   <div style={{height: '180px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
                   <div style={{padding: '20px'}}>
