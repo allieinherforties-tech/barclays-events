@@ -17,6 +17,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch('/api/events')
@@ -44,18 +45,32 @@ export default function Home() {
       });
   }, []);
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to email service
-    console.log('Email submitted:', email);
-    setEmailSubmitted(true);
-    setTimeout(() => setEmailSubmitted(false), 3000);
+    setSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      
+      if (response.ok) {
+        setEmailSubmitted(true);
+        setEmail('');
+        setTimeout(() => setEmailSubmitted(false), 3000);
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const todayDateString = format(new Date(), 'yyyy-MM-dd');
   const todayEvents = events.filter(e => e.dates.start.localDate === todayDateString);
   
-  // Get all week event IDs to exclude from month
   const allWeekEventIds = new Set(
     events
       .filter(e => isThisWeek(parseISO(e.dates.start.localDate)))
@@ -106,7 +121,6 @@ export default function Home() {
         .event-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
       `}</style>
 
-      {/* Header */}
       <header style={{background: 'white', borderBottom: '1px solid #e8e6e1', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)'}}>
         <div style={{maxWidth: '1200px', margin: '0 auto', padding: '24px 20px'}}>
           <h1 style={{fontSize: '32px', fontWeight: '600', color: '#2d2d2d', marginBottom: '4px', letterSpacing: '-0.5px'}}>Barclays Tonight</h1>
@@ -116,7 +130,6 @@ export default function Home() {
 
       <main style={{maxWidth: '1200px', margin: '0 auto', padding: '40px 20px'}}>
         
-        {/* HERO SECTION */}
         {heroEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{background: 'linear-gradient(135deg, #c87d5c 0%, #d4a574 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(200,125,92,0.2)'}}>
@@ -152,7 +165,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* EMAIL SIGNUP */}
         <section style={{marginBottom: '64px'}}>
           <div style={{background: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '2px solid #7a9b8e'}}>
             <div style={{textAlign: 'center', maxWidth: '600px', margin: '0 auto'}}>
@@ -160,24 +172,22 @@ export default function Home() {
               <p style={{color: '#7a7a7a', fontSize: '16px', marginBottom: '24px'}}>Get weekly updates on upcoming shows, concerts, and games at Barclays Center</p>
               
               {!emailSubmitted ? (
-                <form onSubmit={handleEmailSubmit} style={{display: 'flex', gap: '12px', maxWidth: '500px', margin: '0 auto'}}>
+                <form onSubmit={handleEmailSubmit} style={{display: 'flex', gap: '12px', maxWidth: '500px', margin: '0 auto', flexWrap: 'wrap'}}>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
                     required
-                    style={{flex: 1, padding: '14px 20px', borderRadius: '10px', border: '2px solid #e8e6e1', fontSize: '15px', fontFamily: 'system-ui, -apple-system, sans-serif', outline: 'none', transition: 'border-color 0.2s'}}
-                    onFocus={(e) => e.target.style.borderColor = '#7a9b8e'}
-                    onBlur={(e) => e.target.style.borderColor = '#e8e6e1'}
+                    disabled={submitting}
+                    style={{flex: 1, minWidth: '250px', padding: '14px 20px', borderRadius: '10px', border: '2px solid #e8e6e1', fontSize: '15px', fontFamily: 'system-ui, -apple-system, sans-serif', outline: 'none'}}
                   />
                   <button
                     type="submit"
-                    style={{padding: '14px 32px', background: '#7a9b8e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'system-ui, -apple-system, sans-serif', transition: 'background 0.2s'}}
-                    onMouseOver={(e) => e.currentTarget.style.background = '#6a8b7e'}
-                    onMouseOut={(e) => e.currentTarget.style.background = '#7a9b8e'}
+                    disabled={submitting}
+                    style={{padding: '14px 32px', background: submitting ? '#b8b8b8' : '#7a9b8e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'system-ui, -apple-system, sans-serif'}}
                   >
-                    Subscribe
+                    {submitting ? 'Subscribing...' : 'Subscribe'}
                   </button>
                 </form>
               ) : (
@@ -189,7 +199,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* THIS WEEK - Exclude hero events */}
         {weekEvents.filter(e => !heroEvents.some(h => h.id === e.id)).length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
@@ -213,7 +222,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* THIS MONTH - Exclude all week events AND hero */}
         {monthEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
@@ -238,7 +246,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* ALL UPCOMING */}
         {futureEvents.length > 0 && (
           <section>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
@@ -263,7 +270,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
       <footer style={{background: 'white', borderTop: '1px solid #e8e6e1', marginTop: '80px', padding: '32px 20px', textAlign: 'center'}}>
         <p style={{color: '#b8b8b8', fontSize: '13px', margin: 0}}>Independent guide to Barclays Center events • Not affiliated with Barclays Center</p>
         <p style={{color: '#d4d4d4', fontSize: '12px', marginTop: '8px'}}>Event data provided by Ticketmaster</p>
