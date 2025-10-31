@@ -15,6 +15,8 @@ interface Event {
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
 
   useEffect(() => {
     fetch('/api/events')
@@ -42,21 +44,42 @@ export default function Home() {
       });
   }, []);
 
-  // Use direct date string comparison instead of isToday()
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Connect to email service
+    console.log('Email submitted:', email);
+    setEmailSubmitted(true);
+    setTimeout(() => setEmailSubmitted(false), 3000);
+  };
+
   const todayDateString = format(new Date(), 'yyyy-MM-dd');
   const todayEvents = events.filter(e => e.dates.start.localDate === todayDateString);
-  const weekEvents = events.filter(e => isThisWeek(parseISO(e.dates.start.localDate)) && e.dates.start.localDate !== todayDateString);
-  const monthEvents = events.filter(e => 
-    isThisMonth(parseISO(e.dates.start.localDate)) && 
-    !isThisWeek(parseISO(e.dates.start.localDate)) &&
+  
+  // Get all week event IDs to exclude from month
+  const allWeekEventIds = new Set(
+    events
+      .filter(e => isThisWeek(parseISO(e.dates.start.localDate)))
+      .map(e => e.id)
+  );
+  
+  const weekEvents = events.filter(e => 
+    isThisWeek(parseISO(e.dates.start.localDate)) && 
     e.dates.start.localDate !== todayDateString
   );
+  
+  const monthEvents = events.filter(e => {
+    const eventDate = parseISO(e.dates.start.localDate);
+    return isThisMonth(eventDate) && 
+           !allWeekEventIds.has(e.id) && 
+           e.dates.start.localDate !== todayDateString;
+  });
+  
   const futureEvents = events.filter(e => !isThisMonth(parseISO(e.dates.start.localDate)));
 
   const nextEvent = events[0];
   const heroEvents = todayEvents.length > 0 ? todayEvents : (nextEvent ? [nextEvent] : []);
   const heroTitle = todayEvents.length > 0 ? 'Tonight at Barclays' : 'Next at Barclays';
-  const heroSubtitle = todayEvents.length > 0 ? 'Happening right now in Brooklyn' : nextEvent ? `${format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')}` : '';
+  const heroSubtitle = todayEvents.length > 0 ? 'Why you can\'t find parking' : nextEvent ? `${format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')}` : '';
 
   const getImage = (event: Event) => event.images?.[0]?.url || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80';
 
@@ -93,7 +116,7 @@ export default function Home() {
 
       <main style={{maxWidth: '1200px', margin: '0 auto', padding: '40px 20px'}}>
         
-        {/* HERO SECTION - Always shows Tonight or Next */}
+        {/* HERO SECTION */}
         {heroEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{background: 'linear-gradient(135deg, #c87d5c 0%, #d4a574 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(200,125,92,0.2)'}}>
@@ -129,6 +152,43 @@ export default function Home() {
           </section>
         )}
 
+        {/* EMAIL SIGNUP */}
+        <section style={{marginBottom: '64px'}}>
+          <div style={{background: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '2px solid #7a9b8e'}}>
+            <div style={{textAlign: 'center', maxWidth: '600px', margin: '0 auto'}}>
+              <h3 style={{fontSize: '24px', fontWeight: '700', color: '#2d2d2d', marginBottom: '12px'}}>Never Miss an Event</h3>
+              <p style={{color: '#7a7a7a', fontSize: '16px', marginBottom: '24px'}}>Get weekly updates on upcoming shows, concerts, and games at Barclays Center</p>
+              
+              {!emailSubmitted ? (
+                <form onSubmit={handleEmailSubmit} style={{display: 'flex', gap: '12px', maxWidth: '500px', margin: '0 auto'}}>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    style={{flex: 1, padding: '14px 20px', borderRadius: '10px', border: '2px solid #e8e6e1', fontSize: '15px', fontFamily: 'system-ui, -apple-system, sans-serif', outline: 'none', transition: 'border-color 0.2s'}}
+                    onFocus={(e) => e.target.style.borderColor = '#7a9b8e'}
+                    onBlur={(e) => e.target.style.borderColor = '#e8e6e1'}
+                  />
+                  <button
+                    type="submit"
+                    style={{padding: '14px 32px', background: '#7a9b8e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'system-ui, -apple-system, sans-serif', transition: 'background 0.2s'}}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#6a8b7e'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#7a9b8e'}
+                  >
+                    Subscribe
+                  </button>
+                </form>
+              ) : (
+                <div style={{padding: '16px', background: '#f0f7f4', borderRadius: '10px', color: '#7a9b8e', fontWeight: '600'}}>
+                  ✓ Thanks! We'll keep you updated.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* THIS WEEK - Exclude hero events */}
         {weekEvents.filter(e => !heroEvents.some(h => h.id === e.id)).length > 0 && (
           <section style={{marginBottom: '64px'}}>
@@ -153,7 +213,7 @@ export default function Home() {
           </section>
         )}
 
-        {/* THIS MONTH */}
+        {/* THIS MONTH - Exclude all week events AND hero */}
         {monthEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
