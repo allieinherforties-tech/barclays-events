@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { format, parseISO, isThisWeek, isThisMonth, startOfDay } from 'date-fns';
 
@@ -93,16 +94,19 @@ export default function Home() {
 
   const nextEvent = events[0];
   const heroEvents = todayEvents.length > 0 ? todayEvents : (nextEvent ? [nextEvent] : []);
-  const heroTitle = todayEvents.length > 0 ? 'Tonight at Barclays' : 'Next at Barclays';
+  
+  // Updated: Show today's date when there are events tonight
+  const todayFormatted = format(new Date(), 'EEEE, MMMM d');
+  const heroTitle = todayEvents.length > 0 ? todayFormatted : 'Next at Barclays';
   const heroSubtitle = todayEvents.length > 0 ? 'Why you can\'t find parking' : nextEvent ? `${format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')}` : '';
 
   const getImage = (event: Event) => event.images?.[0]?.url || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80';
 
   if (loading) {
     return (
-      <div style={{minHeight: '100vh', background: '#faf9f7', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+      <div style={{minHeight: '100vh', background: '#FFF8F0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
         <div style={{textAlign: 'center'}}>
-          <div style={{width: '48px', height: '48px', border: '3px solid #e8e6e1', borderTop: '3px solid #7a9b8e', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px'}}></div>
+          <div style={{width: '48px', height: '48px', border: '3px solid #E8D5E8', borderTop: '3px solid #6B2D5C', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px'}}></div>
           <p style={{color: '#5a5a5a', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif'}}>Loading events...</p>
         </div>
       </div>
@@ -110,7 +114,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{minHeight: '100vh', background: '#faf9f7', fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+    <div style={{minHeight: '100vh', background: '#FFF8F0', fontFamily: 'system-ui, -apple-system, sans-serif'}}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 
@@ -121,10 +125,20 @@ export default function Home() {
         .event-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
       `}</style>
 
-      <header style={{background: 'white', borderBottom: '1px solid #e8e6e1', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)'}}>
+      {/* UPDATED HEADER */}
+      <header style={{background: '#6B2D5C', borderBottom: '1px solid #6B2D5C', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)'}}>
         <div style={{maxWidth: '1200px', margin: '0 auto', padding: '24px 20px'}}>
-          <h1 style={{fontSize: '32px', fontWeight: '600', color: '#2d2d2d', marginBottom: '4px', letterSpacing: '-0.5px'}}>Barclays Tonight</h1>
-          <p style={{color: '#7a7a7a', fontSize: '15px'}}>Brooklyn's premier events destination</p>
+          <h1 style={{fontSize: '32px', fontWeight: '600', color: 'white', marginBottom: '4px', letterSpacing: '-0.5px'}}>Barclays Tonight</h1>
+          <p style={{color: '#FFF8F0', fontSize: '15px', marginBottom: '12px'}}>The lowdown on what 15,000+ people are up to (and why you can't find parking)</p>
+          
+          {/* Live Event Counter */}
+          <div style={{display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '20px', fontSize: '14px'}}>
+            <div style={{width: '8px', height: '8px', background: '#B4E7CE', borderRadius: '50%', animation: 'pulse 2s infinite', boxShadow: '0 0 8px #B4E7CE'}}></div>
+            <span style={{color: 'white', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px'}}>LIVE</span>
+            <span style={{color: '#FFF8F0'}}>
+              {events.length} events this month · {events.filter(e => isThisWeek(parseISO(e.dates.start.localDate))).length} this week
+            </span>
+          </div>
         </div>
       </header>
 
@@ -132,7 +146,7 @@ export default function Home() {
         
         {heroEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
-            <div style={{background: 'linear-gradient(135deg, #c87d5c 0%, #d4a574 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(200,125,92,0.2)'}}>
+            <div style={{background: 'linear-gradient(135deg, #6B2D5C 0%, #FF6B9D 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(107,45,92,0.2)'}}>
               <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
                 {todayEvents.length > 0 && <div style={{width: '12px', height: '12px', background: 'white', borderRadius: '50%', animation: 'pulse 2s infinite'}}></div>}
                 <h2 style={{fontSize: '36px', fontWeight: '700', color: 'white', margin: 0, letterSpacing: '-0.5px'}}>{heroTitle}</h2>
@@ -142,14 +156,14 @@ export default function Home() {
 
             <div style={{display: 'grid', gridTemplateColumns: heroEvents.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
               {heroEvents.map(event => (
-                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '2px solid #c87d5c'}}>
+                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '2px solid #FF6B9D'}}>
                   <div style={{height: '320px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative'}}>
-                    <div style={{position: 'absolute', top: '20px', right: '20px', background: '#c87d5c', color: 'white', padding: '10px 20px', borderRadius: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'}}>
+                    <div style={{position: 'absolute', top: '20px', right: '20px', background: '#FF6B9D', color: 'white', padding: '10px 20px', borderRadius: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'}}>
                       {todayEvents.length > 0 ? 'TONIGHT' : format(parseISO(event.dates.start.localDate), 'MMM d').toUpperCase()}
                     </div>
                   </div>
                   <div style={{padding: '32px'}}>
-                    <div style={{display: 'inline-block', background: '#fef3ef', color: '#c87d5c', padding: '8px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
+                    <div style={{display: 'inline-block', background: '#E8D5E8', color: '#6B2D5C', padding: '8px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                       {event.classifications?.[0]?.segment?.name || 'Event'}
                     </div>
                     <h3 style={{fontSize: '26px', fontWeight: '700', color: '#2d2d2d', marginBottom: '16px', lineHeight: '1.2'}}>{event.name}</h3>
@@ -157,7 +171,7 @@ export default function Home() {
                       {event.dates.start.localTime && <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{fontSize: '18px'}}>🕐</span> <strong>{event.dates.start.localTime}</strong></div>}
                       {event.priceRanges?.[0] && <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}><span style={{fontSize: '18px'}}>💵</span> ${event.priceRanges[0].min} - ${event.priceRanges[0].max}</div>}
                     </div>
-                    <a href={event.url} target="_blank" rel="noopener" style={{display: 'block', background: '#c87d5c', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', fontWeight: '700', fontSize: '16px', boxShadow: '0 4px 12px rgba(200,125,92,0.3)'}}>Get Tickets →</a>
+                    <a href={event.url} target="_blank" rel="noopener" style={{display: 'block', background: '#FF6B9D', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', fontWeight: '700', fontSize: '16px', boxShadow: '0 4px 12px rgba(255,107,157,0.3)'}}>Get Tickets →</a>
                   </div>
                 </div>
               ))}
@@ -166,7 +180,7 @@ export default function Home() {
         )}
 
         <section style={{marginBottom: '64px'}}>
-          <div style={{background: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '2px solid #7a9b8e'}}>
+          <div style={{background: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '2px solid #E8D5E8'}}>
             <div style={{textAlign: 'center', maxWidth: '600px', margin: '0 auto'}}>
               <h3 style={{fontSize: '24px', fontWeight: '700', color: '#2d2d2d', marginBottom: '12px'}}>Never Miss an Event</h3>
               <p style={{color: '#7a7a7a', fontSize: '16px', marginBottom: '24px'}}>Get weekly updates on upcoming shows, concerts, and games at Barclays Center</p>
@@ -180,18 +194,18 @@ export default function Home() {
                     placeholder="Enter your email"
                     required
                     disabled={submitting}
-                    style={{flex: 1, minWidth: '250px', padding: '14px 20px', borderRadius: '10px', border: '2px solid #e8e6e1', fontSize: '15px', fontFamily: 'system-ui, -apple-system, sans-serif', outline: 'none'}}
+                    style={{flex: 1, minWidth: '250px', padding: '14px 20px', borderRadius: '10px', border: '2px solid #E8D5E8', fontSize: '15px', fontFamily: 'system-ui, -apple-system, sans-serif', outline: 'none'}}
                   />
                   <button
                     type="submit"
                     disabled={submitting}
-                    style={{padding: '14px 32px', background: submitting ? '#b8b8b8' : '#7a9b8e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'system-ui, -apple-system, sans-serif'}}
+                    style={{padding: '14px 32px', background: submitting ? '#b8b8b8' : '#6B2D5C', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'system-ui, -apple-system, sans-serif'}}
                   >
                     {submitting ? 'Subscribing...' : 'Subscribe'}
                   </button>
                 </form>
               ) : (
-                <div style={{padding: '16px', background: '#f0f7f4', borderRadius: '10px', color: '#7a9b8e', fontWeight: '600'}}>
+                <div style={{padding: '16px', background: '#f0f7f4', borderRadius: '10px', color: '#6B2D5C', fontWeight: '600'}}>
                   ✓ Thanks! We'll keep you updated.
                 </div>
               )}
@@ -202,7 +216,7 @@ export default function Home() {
         {weekEvents.filter(e => !heroEvents.some(h => h.id === e.id)).length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
-              <div style={{width: '8px', height: '8px', background: '#7a9b8e', borderRadius: '50%'}}></div>
+              <div style={{width: '8px', height: '8px', background: '#6B2D5C', borderRadius: '50%'}}></div>
               <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Week</h2>
             </div>
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px'}}>
@@ -210,11 +224,11 @@ export default function Home() {
                 <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
                   <div style={{height: '180px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
                   <div style={{padding: '20px'}}>
-                    <div style={{fontSize: '12px', color: '#7a9b8e', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
+                    <div style={{fontSize: '12px', color: '#6B2D5C', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                       {format(parseISO(event.dates.start.localDate), 'EEE, MMM d')}
                     </div>
                     <h3 style={{fontSize: '17px', fontWeight: '600', color: '#2d2d2d', marginBottom: '12px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{event.name}</h3>
-                    <a href={event.url} target="_blank" rel="noopener" style={{display: 'inline-block', color: '#7a9b8e', fontSize: '14px', fontWeight: '600', textDecoration: 'none', borderBottom: '2px solid #7a9b8e', paddingBottom: '2px'}}>View Details →</a>
+                    <a href={event.url} target="_blank" rel="noopener" style={{display: 'inline-block', color: '#FF6B9D', fontSize: '14px', fontWeight: '600', textDecoration: 'none', borderBottom: '2px solid #FF6B9D', paddingBottom: '2px'}}>View Details →</a>
                   </div>
                 </div>
               ))}
@@ -225,7 +239,7 @@ export default function Home() {
         {monthEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
-              <div style={{width: '8px', height: '8px', background: '#d4a574', borderRadius: '50%'}}></div>
+              <div style={{width: '8px', height: '8px', background: '#FF6B9D', borderRadius: '50%'}}></div>
               <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Month</h2>
             </div>
             <div style={{background: 'white', borderRadius: '14px', padding: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
@@ -239,7 +253,7 @@ export default function Home() {
                     <h4 style={{fontSize: '16px', fontWeight: '600', color: '#2d2d2d', marginBottom: '4px'}}>{event.name}</h4>
                     <p style={{fontSize: '13px', color: '#7a7a7a', margin: 0}}>{event.dates.start.localTime || 'See event for time'}</p>
                   </div>
-                  <a href={event.url} target="_blank" rel="noopener" style={{padding: '10px 20px', background: '#f4f3f1', color: '#2d2d2d', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap'}}>Tickets</a>
+                  <a href={event.url} target="_blank" rel="noopener" style={{padding: '10px 20px', background: '#E8D5E8', color: '#6B2D5C', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap'}}>Tickets</a>
                 </div>
               ))}
             </div>
@@ -261,16 +275,17 @@ export default function Home() {
                       {format(parseISO(event.dates.start.localDate), 'MMM d, yyyy')}
                     </div>
                     <h4 style={{fontSize: '15px', fontWeight: '600', color: '#2d2d2d', marginBottom: '10px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{event.name}</h4>
-                    <a href={event.url} target="_blank" rel="noopener" style={{fontSize: '13px', color: '#7a9b8e', fontWeight: '600', textDecoration: 'none'}}>Details →</a>
+                    <a href={event.url} target="_blank" rel="noopener" style={{fontSize: '13px', color: '#FF6B9D', fontWeight: '600', textDecoration: 'none'}}>Details →</a>
                   </div>
                 </div>
               ))}
             </div>
           </section>
         )}
+
       </main>
 
-      <footer style={{background: 'white', borderTop: '1px solid #e8e6e1', marginTop: '80px', padding: '32px 20px', textAlign: 'center'}}>
+      <footer style={{background: 'white', borderTop: '1px solid #E8D5E8', marginTop: '80px', padding: '32px 20px', textAlign: 'center'}}>
         <p style={{color: '#b8b8b8', fontSize: '13px', margin: 0}}>Independent guide to Barclays Center events • Not affiliated with Barclays Center</p>
         <p style={{color: '#d4d4d4', fontSize: '12px', marginTop: '8px'}}>Event data provided by Ticketmaster</p>
       </footer>
