@@ -95,7 +95,6 @@ export default function Home() {
   const nextEvent = events[0];
   const heroEvents = todayEvents.length > 0 ? todayEvents : (nextEvent ? [nextEvent] : []);
   
-  // Updated: Show "Why you can't find parking on [Date]" all on one line
   const todayFormatted = format(new Date(), 'EEEE, MMMM d');
   const heroTitle = todayEvents.length > 0 
     ? `Why you can't find parking on ${todayFormatted}` 
@@ -136,7 +135,6 @@ export default function Home() {
           <h1 style={{fontSize: '32px', fontWeight: '600', color: 'white', marginBottom: '4px', letterSpacing: '-0.5px'}}>Barclays Tonight</h1>
           <p style={{color: '#FFF8F0', fontSize: '15px', marginBottom: '12px'}}>The lowdown on what 15,000+ people are up to</p>
           
-          {/* Live Event Counter */}
           <div style={{display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '20px', fontSize: '14px'}}>
             <div style={{width: '8px', height: '8px', background: '#B4E7CE', borderRadius: '50%', animation: 'pulse 2s infinite', boxShadow: '0 0 8px #B4E7CE'}}></div>
             <span style={{color: 'white', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px'}}>LIVE</span>
@@ -151,7 +149,6 @@ export default function Home() {
         
         {heroEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
-            {/* UPDATED: Removed pulsing dot, single line title */}
             <div style={{
               background: 'linear-gradient(135deg, rgba(107, 45, 92, 0.85) 0%, rgba(255, 107, 157, 0.75) 100%)',
               backdropFilter: 'blur(10px)',
@@ -171,8 +168,13 @@ export default function Home() {
 
             <div style={{display: 'grid', gridTemplateColumns: heroEvents.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
               {heroEvents.map(event => (
-                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '2px solid #FF6B9D'}}>
+                <article key={event.id} className="event-card" style={{background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '2px solid #FF6B9D'}}>
                   <div style={{height: '320px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative'}}>
+                    <img 
+                      src={getImage(event)} 
+                      alt={`${event.name} at Barclays Center Brooklyn - ${format(parseISO(event.dates.start.localDate), 'MMMM d, yyyy')}`}
+                      style={{display: 'none'}}
+                    />
                     <div style={{position: 'absolute', top: '20px', right: '20px', background: '#FF6B9D', color: 'white', padding: '10px 20px', borderRadius: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'}}>
                       {todayEvents.length > 0 ? 'TONIGHT' : format(parseISO(event.dates.start.localDate), 'MMM d').toUpperCase()}
                     </div>
@@ -188,7 +190,7 @@ export default function Home() {
                     </div>
                     <a href={event.url} target="_blank" rel="noopener" style={{display: 'block', background: '#FF6B9D', color: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', fontWeight: '700', fontSize: '16px', boxShadow: '0 4px 12px rgba(255,107,157,0.3)'}}>Get Tickets →</a>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </section>
@@ -232,12 +234,18 @@ export default function Home() {
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
               <div style={{width: '8px', height: '8px', background: '#6B2D5C', borderRadius: '50%'}}></div>
-              <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Week</h2>
+              <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Week at Barclays Center</h2>
             </div>
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px'}}>
               {weekEvents.filter(e => !heroEvents.some(h => h.id === e.id)).slice(0, 6).map(event => (
-                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
-                  <div style={{height: '180px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                <article key={event.id} className="event-card" style={{background: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
+                  <div style={{height: '180px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
+                    <img 
+                      src={getImage(event)} 
+                      alt={`${event.name} at Barclays Center - ${format(parseISO(event.dates.start.localDate), 'MMM d')}`}
+                      style={{display: 'none'}}
+                    />
+                  </div>
                   <div style={{padding: '20px'}}>
                     <div style={{fontSize: '12px', color: '#6B2D5C', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                       {format(parseISO(event.dates.start.localDate), 'EEE, MMM d')}
@@ -245,7 +253,7 @@ export default function Home() {
                     <h3 style={{fontSize: '17px', fontWeight: '600', color: '#2d2d2d', marginBottom: '12px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{event.name}</h3>
                     <a href={event.url} target="_blank" rel="noopener" style={{display: 'inline-block', color: '#FF6B9D', fontSize: '14px', fontWeight: '600', textDecoration: 'none', borderBottom: '2px solid #FF6B9D', paddingBottom: '2px'}}>View Details →</a>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </section>
@@ -255,7 +263,7 @@ export default function Home() {
           <section style={{marginBottom: '64px'}}>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
               <div style={{width: '8px', height: '8px', background: '#FF6B9D', borderRadius: '50%'}}></div>
-              <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Month</h2>
+              <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>This Month at Barclays Center</h2>
             </div>
             <div style={{background: 'white', borderRadius: '14px', padding: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}>
               {monthEvents.slice(0, 10).map(event => (
@@ -279,12 +287,18 @@ export default function Home() {
           <section>
             <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
               <div style={{width: '8px', height: '8px', background: '#b8b8b8', borderRadius: '50%'}}></div>
-              <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>All Upcoming Events</h2>
+              <h2 style={{fontSize: '24px', fontWeight: '600', color: '#2d2d2d', margin: 0}}>All Upcoming Barclays Center Events</h2>
             </div>
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px'}}>
               {futureEvents.map(event => (
-                <div key={event.id} className="event-card" style={{background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.05)'}}>
-                  <div style={{height: '140px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                <article key={event.id} className="event-card" style={{background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.05)'}}>
+                  <div style={{height: '140px', backgroundImage: `url(${getImage(event)})`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
+                    <img 
+                      src={getImage(event)} 
+                      alt={`${event.name} tickets Barclays Center Brooklyn`}
+                      style={{display: 'none'}}
+                    />
+                  </div>
                   <div style={{padding: '16px'}}>
                     <div style={{fontSize: '11px', color: '#7a7a7a', fontWeight: '600', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                       {format(parseISO(event.dates.start.localDate), 'MMM d, yyyy')}
@@ -292,7 +306,7 @@ export default function Home() {
                     <h4 style={{fontSize: '15px', fontWeight: '600', color: '#2d2d2d', marginBottom: '10px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{event.name}</h4>
                     <a href={event.url} target="_blank" rel="noopener" style={{fontSize: '13px', color: '#FF6B9D', fontWeight: '600', textDecoration: 'none'}}>Details →</a>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </section>
@@ -300,9 +314,23 @@ export default function Home() {
 
       </main>
 
-      <footer style={{background: 'white', borderTop: '1px solid #E8D5E8', marginTop: '80px', padding: '32px 20px', textAlign: 'center'}}>
-        <p style={{color: '#b8b8b8', fontSize: '13px', margin: 0}}>Independent guide to Barclays Center events • Not affiliated with Barclays Center</p>
-        <p style={{color: '#d4d4d4', fontSize: '12px', marginTop: '8px'}}>Event data provided by Ticketmaster</p>
+      <footer style={{background: 'white', borderTop: '1px solid #E8D5E8', marginTop: '80px', padding: '40px 20px'}}>
+        <div style={{maxWidth: '1200px', margin: '0 auto', textAlign: 'center'}}>
+          <h3 style={{fontSize: '18px', fontWeight: '600', color: '#2d2d2d', marginBottom: '12px'}}>
+            Your Guide to Barclays Center Events in Brooklyn
+          </h3>
+          <p style={{color: '#7a7a7a', fontSize: '14px', marginBottom: '16px', maxWidth: '600px', margin: '0 auto 16px'}}>
+            Find concerts, sports games, family shows, and special events at Barclays Center. 
+            Located in downtown Brooklyn at Atlantic Terminal, serving Park Slope, Fort Greene, 
+            Prospect Heights, and all of Brooklyn.
+          </p>
+          <p style={{color: '#b8b8b8', fontSize: '13px', margin: 0}}>
+            Independent guide to Barclays Center events • Not affiliated with Barclays Center
+          </p>
+          <p style={{color: '#d4d4d4', fontSize: '12px', marginTop: '8px'}}>
+            Event data provided by Ticketmaster
+          </p>
+        </div>
       </footer>
     </div>
   );
