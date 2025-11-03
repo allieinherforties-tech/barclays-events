@@ -95,10 +95,14 @@ export default function Home() {
   const nextEvent = events[0];
   const heroEvents = todayEvents.length > 0 ? todayEvents : (nextEvent ? [nextEvent] : []);
   
-  // Updated: Show today's date when there are events tonight
+  // Updated copy
   const todayFormatted = format(new Date(), 'EEEE, MMMM d');
   const heroTitle = todayEvents.length > 0 ? todayFormatted : 'Next at Barclays';
-  const heroSubtitle = todayEvents.length > 0 ? 'Why you can\'t find parking' : nextEvent ? `${format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')}` : '';
+  const heroSubtitle = todayEvents.length > 0 
+    ? "Why you can't find parking" 
+    : (nextEvent 
+        ? `${format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')}` 
+        : "It's not a Barclays crowd making it hard to park tonight");
 
   const getImage = (event: Event) => event.images?.[0]?.url || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80';
 
@@ -125,11 +129,11 @@ export default function Home() {
         .event-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
       `}</style>
 
-      {/* UPDATED HEADER */}
+      {/* UPDATED HEADER - Removed parking text */}
       <header style={{background: '#6B2D5C', borderBottom: '1px solid #6B2D5C', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)'}}>
         <div style={{maxWidth: '1200px', margin: '0 auto', padding: '24px 20px'}}>
           <h1 style={{fontSize: '32px', fontWeight: '600', color: 'white', marginBottom: '4px', letterSpacing: '-0.5px'}}>Barclays Tonight</h1>
-          <p style={{color: '#FFF8F0', fontSize: '15px', marginBottom: '12px'}}>The lowdown on what 15,000+ people are up to (and why you can't find parking)</p>
+          <p style={{color: '#FFF8F0', fontSize: '15px', marginBottom: '12px'}}>The lowdown on what 15,000+ people are up to</p>
           
           {/* Live Event Counter */}
           <div style={{display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '20px', fontSize: '14px'}}>
@@ -146,12 +150,21 @@ export default function Home() {
         
         {heroEvents.length > 0 && (
           <section style={{marginBottom: '64px'}}>
-            <div style={{background: 'linear-gradient(135deg, #6B2D5C 0%, #FF6B9D 100%)', borderRadius: '20px', padding: '48px', marginBottom: '32px', boxShadow: '0 8px 24px rgba(107,45,92,0.2)'}}>
+            {/* UPDATED: Lighter, more transparent gradient */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(107, 45, 92, 0.85) 0%, rgba(255, 107, 157, 0.75) 100%)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '20px', 
+              padding: '48px', 
+              marginBottom: '32px', 
+              boxShadow: '0 8px 24px rgba(107,45,92,0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
               <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
                 {todayEvents.length > 0 && <div style={{width: '12px', height: '12px', background: 'white', borderRadius: '50%', animation: 'pulse 2s infinite'}}></div>}
                 <h2 style={{fontSize: '36px', fontWeight: '700', color: 'white', margin: 0, letterSpacing: '-0.5px'}}>{heroTitle}</h2>
               </div>
-              <p style={{color: 'rgba(255,255,255,0.9)', fontSize: '18px', margin: 0}}>{heroSubtitle}</p>
+              <p style={{color: 'rgba(255,255,255,0.95)', fontSize: '18px', margin: 0}}>{heroSubtitle}</p>
             </div>
 
             <div style={{display: 'grid', gridTemplateColumns: heroEvents.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
