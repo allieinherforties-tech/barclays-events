@@ -69,8 +69,23 @@ export default function Home() {
     }
   };
 
+  // Helper function to check if event is "tonight" (after 12pm)
+  const isNighttimeEvent = (event: Event) => {
+    if (!event.dates.start.localTime) return true; // If no time specified, assume it's evening
+    
+    const timeStr = event.dates.start.localTime;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    // Convert to 24-hour format and check if >= 12:00 (noon)
+    return hours >= 12;
+  };
+
   const todayDateString = format(new Date(), 'yyyy-MM-dd');
-  const todayEvents = events.filter(e => e.dates.start.localDate === todayDateString);
+  
+  // UPDATED: Filter for today's events that are nighttime only (12pm or later)
+  const todayEvents = events.filter(e => 
+    e.dates.start.localDate === todayDateString && isNighttimeEvent(e)
+  );
   
   const allWeekEventIds = new Set(
     events
@@ -95,6 +110,7 @@ export default function Home() {
   const nextEvent = events[0];
   const heroEvents = todayEvents.length > 0 ? todayEvents : (nextEvent ? [nextEvent] : []);
   
+  // Updated: Show "Why you can't find parking on [Date]" only for nighttime events
   const todayFormatted = format(new Date(), 'EEEE, MMMM d');
   const heroTitle = todayEvents.length > 0 
     ? `Why you can't find parking on ${todayFormatted}` 
