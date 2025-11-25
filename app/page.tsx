@@ -71,15 +71,15 @@ export default function HomePage() {
         }
 
         const data: EventsResponse = await res.json();
-
         const rawEvents = data?.events ?? [];
 
-        // Only future (or today) events
         const today = startOfDay(new Date());
 
+        // Only future (or today) events
         const relevantEvents = rawEvents.filter((e) => {
-          if (!e?.dates?.start?.localDate) return false;
-          const eventDate = startOfDay(parseISO(e.dates.start.localDate));
+          const dateStr = e?.dates?.start?.localDate;
+          if (!dateStr) return false;
+          const eventDate = startOfDay(parseISO(dateStr));
           return eventDate >= today;
         });
 
@@ -146,7 +146,7 @@ export default function HomePage() {
   const todayDate = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
   const todayFormatted = useMemo(() => format(new Date(), 'EEEE, MMMM d'), []);
 
-  // Helper: assume events with no time are evening (OK for hero)
+  // Assume events with no time are evening
   const isNighttimeEvent = (event: Event) => {
     const timeStr = event.dates.start.localTime;
     if (!timeStr) return true;
@@ -208,17 +208,17 @@ export default function HomePage() {
   const nextEvent = events[0];
   const heroEvents = todayEvents.length > 0 ? todayEvents : nextEvent ? [nextEvent] : [];
 
-  const heroTitle =
-    todayEvents.length > 0
-      ? `Why you can't find parking on ${todayFormatted}`
-      : 'Next at Barclays';
+  const isTonight = todayEvents.length > 0;
 
-  const heroSubtitle =
-    todayEvents.length > 0
-      ? ''
-      : nextEvent
-      ? format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')
-      : "It's not a Barclays crowd making it hard to park tonight";
+  const heroHeading = isTonight ? 'Tonight at Barclays' : 'Next at Barclays';
+  const heroTitle = isTonight
+    ? `Why you can't find parking on ${todayFormatted}`
+    : heroHeading;
+  const heroSubtitle = isTonight
+    ? ''
+    : nextEvent
+    ? format(parseISO(nextEvent.dates.start.localDate), 'EEEE, MMMM d')
+    : "It's not a Barclays crowd making it hard to park tonight";
 
   const thisMonthCount = events.filter((e) =>
     isThisMonth(parseISO(e.dates.start.localDate)),
@@ -262,6 +262,17 @@ export default function HomePage() {
   if (loading && events.length === 0 && !fetchError) {
     return renderLoading();
   }
+
+  const formatLocalTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    // Parse as time only
+    try {
+      const date = parseISO(`1970-01-01T${timeStr}`);
+      return format(date, 'h:mm a');
+    } catch {
+      return timeStr;
+    }
+  };
 
   return (
     <div
@@ -313,7 +324,7 @@ export default function HomePage() {
               letterSpacing: '-0.5px',
             }}
           >
-            Barclays Tonight
+            Barclays Tonight – Barclays Center Events in Brooklyn
           </h1>
           <p
             style={{
@@ -323,7 +334,7 @@ export default function HomePage() {
             }}
           >
             The lowdown on what 15,000+ people are up to (and why you can&apos;t find
-            parking)
+            parking).
           </p>
 
           {/* Live Event Counter */}
@@ -370,7 +381,7 @@ export default function HomePage() {
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '40px 20px',
+          padding: '32px 20px 40px',
         }}
       >
         {/* Error banner if events fail to load */}
@@ -393,27 +404,40 @@ export default function HomePage() {
 
         {/* HERO */}
         {heroEvents.length > 0 && (
-          <section style={{ marginBottom: '48px' }}>
+          <section style={{ marginBottom: '32px' }}>
             <div
+              className="hero-container"
               style={{
                 background:
                   'linear-gradient(135deg, rgba(107, 45, 92, 0.85) 0%, rgba(255, 107, 157, 0.75) 100%)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '20px',
-                padding: '36px',
-                marginBottom: '24px',
+                padding: '30px',
+                marginBottom: '20px',
                 boxShadow: '0 8px 24px rgba(107,45,92,0.15)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
               }}
             >
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: 'rgba(255,255,255,0.85)',
+                  marginBottom: '4px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  fontWeight: 600,
+                }}
+              >
+                Featured Event
+              </p>
               <h2
                 style={{
-                  fontSize: '30px',
+                  fontSize: '26px',
                   fontWeight: 700,
                   color: 'white',
                   margin: 0,
                   letterSpacing: '-0.5px',
-                  marginBottom: heroSubtitle ? '8px' : 0,
+                  marginBottom: heroSubtitle ? '6px' : 0,
                 }}
               >
                 {heroTitle}
@@ -422,7 +446,7 @@ export default function HomePage() {
                 <p
                   style={{
                     color: 'rgba(255,255,255,0.95)',
-                    fontSize: '18px',
+                    fontSize: '16px',
                     margin: 0,
                   }}
                 >
@@ -440,144 +464,177 @@ export default function HomePage() {
                 gap: '24px',
               }}
             >
-              {heroEvents.map((event) => (
-                <article
-                  key={event.id}
-                  className="event-card"
-                  style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    border: '2px solid #FF6B9D',
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  <div
+              {heroEvents.map((event, idx) => {
+                const formattedTime = formatLocalTime(event.dates.start.localTime);
+                const imageUrl = getImageUrl(event);
+                const hasImage = !!event.images?.[0]?.url;
+
+                return (
+                  <article
+                    key={event.id}
+                    className="event-card"
                     style={{
-                      position: 'relative',
-                      width: '100%',
-                      height: '260px',
+                      background: 'white',
+                      borderRadius: '16px',
                       overflow: 'hidden',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      border: '2px solid #FF6B9D',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
-                    <Image
-                      src={getImageUrl(event)}
-                      alt={`${event.name} at Barclays Center Brooklyn - ${format(
-                        parseISO(event.dates.start.localDate),
-                        'MMMM d, yyyy',
-                      )}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      style={{ objectFit: 'cover' }}
-                      priority
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '16px',
-                        right: '16px',
-                        background: '#FF6B9D',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '24px',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                      }}
-                    >
-                      {todayEvents.length > 0
-                        ? 'TONIGHT'
-                        : format(parseISO(event.dates.start.localDate), 'MMM d').toUpperCase()}
-                    </div>
-                  </div>
-                  <div style={{ padding: '24px' }}>
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        background: '#E8D5E8',
-                        color: '#6B2D5C',
-                        padding: '6px 12px',
-                        borderRadius: '12px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        marginBottom: '12px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      {event.classifications?.[0]?.segment?.name || 'Event'}
-                    </div>
-                    <h3
-                      style={{
-                        fontSize: '22px',
-                        fontWeight: 700,
-                        color: '#2d2d2d',
-                        marginBottom: '12px',
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {event.name}
-                    </h3>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        marginBottom: '20px',
-                        color: '#7a7a7a',
-                        fontSize: '14px',
-                      }}
-                    >
-                      {event.dates.start.localTime && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>🕐</span>
-                          <strong>{event.dates.start.localTime}</strong>
+                    {hasImage ? (
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '260px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Image
+                          src={imageUrl}
+                          alt={`${event.name} at Barclays Center Brooklyn - ${format(
+                            parseISO(event.dates.start.localDate),
+                            'MMMM d, yyyy',
+                          )}`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          style={{ objectFit: 'cover' }}
+                          priority={idx === 0}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '16px',
+                            right: '16px',
+                            background: '#FF6B9D',
+                            color: 'white',
+                            padding: '8px 16px',
+                            borderRadius: '24px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          {isTonight
+                            ? 'TONIGHT'
+                            : format(
+                                parseISO(event.dates.start.localDate),
+                                'MMM d',
+                              ).toUpperCase()}
                         </div>
-                      )}
-                      {event.priceRanges?.[0] && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>💵</span>
-                          ${event.priceRanges[0].min} – ${event.priceRanges[0].max}
-                        </div>
-                      )}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '260px',
+                          background:
+                            'radial-gradient(circle at 0 0, #E8D5E8, #6B2D5C)',
+                        }}
+                      />
+                    )}
+                    <div style={{ padding: '24px' }}>
+                      <div
+                        style={{
+                          display: 'inline-block',
+                          background: '#E8D5E8',
+                          color: '#6B2D5C',
+                          padding: '6px 12px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          marginBottom: '12px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        {event.classifications?.[0]?.segment?.name || 'Event'}
+                      </div>
+                      <h3
+                        style={{
+                          fontSize: '22px',
+                          fontWeight: 700,
+                          color: '#2d2d2d',
+                          marginBottom: '12px',
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {event.name}
+                      </h3>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          marginBottom: '20px',
+                          color: '#7a7a7a',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {formattedTime && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                            }}
+                          >
+                            <span style={{ fontSize: '18px' }}>🕐</span>
+                            <strong>{formattedTime}</strong>
+                          </div>
+                        )}
+                        {event.priceRanges?.[0] && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                            }}
+                          >
+                            <span style={{ fontSize: '18px' }}>💵</span>
+                            ${event.priceRanges[0].min} – ${event.priceRanges[0].max}
+                          </div>
+                        )}
+                      </div>
+                      <a
+                        href={event.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'block',
+                          background: '#FF6B9D',
+                          color: 'white',
+                          padding: '14px',
+                          borderRadius: '12px',
+                          textAlign: 'center',
+                          textDecoration: 'none',
+                          fontWeight: 700,
+                          fontSize: '15px',
+                          boxShadow: '0 4px 12px rgba(255,107,157,0.3)',
+                        }}
+                      >
+                        Get Tickets →
+                      </a>
                     </div>
-                    <a
-                      href={event.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'block',
-                        background: '#FF6B9D',
-                        color: 'white',
-                        padding: '14px',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        textDecoration: 'none',
-                        fontWeight: 700,
-                        fontSize: '15px',
-                        boxShadow: '0 4px 12px rgba(255,107,157,0.3)',
-                      }}
-                    >
-                      Get Tickets →
-                    </a>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}
 
         {/* PLAN YOUR NIGHT / GUIDES ROW */}
-        <section style={{ marginBottom: '48px' }}>
+        <section style={{ marginBottom: '40px' }}>
           <div
+            className="plan-grid"
             style={{
               background: 'white',
               borderRadius: '16px',
-              padding: '24px',
+              padding: '20px 24px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
               border: '2px solid #E8D5E8',
               display: 'grid',
@@ -586,35 +643,57 @@ export default function HomePage() {
             }}
           >
             <div>
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#7a7a7a',
+                  marginBottom: '4px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  fontWeight: 600,
+                }}
+              >
+                Before you go
+              </p>
               <h2
                 style={{
-                  fontSize: '18px',
+                  fontSize: '16px',
                   fontWeight: 600,
                   color: '#2d2d2d',
-                  marginBottom: '8px',
+                  marginBottom: '4px',
                 }}
               >
                 Plan Your Night
               </h2>
               <p
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   color: '#7a7a7a',
-                  marginBottom: '12px',
+                  marginBottom: '8px',
                 }}
               >
-                Sort out the basics: how you&apos;re getting here, where you&apos;ll park,
-                and what you&apos;ll eat before or after the show.
+                Sort out the basics: getting here, where you&apos;ll park, and what you&apos;ll
+                eat before or after the show.
               </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
               <Link
                 href="/how-to-get-to-barclays-center"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   color: '#FF6B9D',
                   fontWeight: 600,
                   textDecoration: 'none',
+                  padding: '6px 10px',
+                  borderRadius: '999px',
+                  background: '#FFF0F6',
+                  display: 'inline-block',
                 }}
               >
                 How to get to Barclays Center →
@@ -622,10 +701,14 @@ export default function HomePage() {
               <Link
                 href="/barclays-center-parking"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   color: '#FF6B9D',
                   fontWeight: 600,
                   textDecoration: 'none',
+                  padding: '6px 10px',
+                  borderRadius: '999px',
+                  background: '#FFF0F6',
+                  display: 'inline-block',
                 }}
               >
                 Where to park near Barclays →
@@ -633,10 +716,14 @@ export default function HomePage() {
               <Link
                 href="/restaurants-near-barclays-center"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   color: '#FF6B9D',
                   fontWeight: 600,
                   textDecoration: 'none',
+                  padding: '6px 10px',
+                  borderRadius: '999px',
+                  background: '#FFF0F6',
+                  display: 'inline-block',
                 }}
               >
                 Where to eat &amp; drink nearby →
@@ -957,7 +1044,7 @@ export default function HomePage() {
                         margin: 0,
                       }}
                     >
-                      {event.dates.start.localTime || 'See event for time'}
+                      {formatLocalTime(event.dates.start.localTime) || 'See event for time'}
                     </p>
                   </div>
                   <a
@@ -1002,7 +1089,7 @@ export default function HomePage() {
                   borderRadius: '50%',
                 }}
               />
-              <h2
+            <h2
                 style={{
                   fontSize: '22px',
                   fontWeight: 600,
