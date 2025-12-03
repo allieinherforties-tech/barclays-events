@@ -49,7 +49,6 @@ export default function HomePage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch events from API
   useEffect(() => {
     let cancelled = false;
 
@@ -75,7 +74,6 @@ export default function HomePage() {
 
         const today = startOfDay(new Date());
 
-        // Only future (or today) events
         const relevantEvents = rawEvents.filter((e) => {
           const dateStr = e?.dates?.start?.localDate;
           if (!dateStr) return false;
@@ -83,7 +81,6 @@ export default function HomePage() {
           return eventDate >= today;
         });
 
-        // De‑duplicate by name + date
         const uniqueEvents = relevantEvents.reduce<Event[]>((acc, event) => {
           const key = `${event.name.toLowerCase().trim()}-${event.dates.start.localDate}`;
           const exists = acc.some(
@@ -146,7 +143,6 @@ export default function HomePage() {
   const todayDate = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
   const todayFormatted = useMemo(() => format(new Date(), 'EEEE, MMMM d'), []);
 
-  // Assume events with no time are evening
   const isNighttimeEvent = (event: Event) => {
     const timeStr = event.dates.start.localTime;
     if (!timeStr) return true;
@@ -210,10 +206,9 @@ export default function HomePage() {
 
   const isTonight = todayEvents.length > 0;
 
-  const heroHeading = isTonight ? 'Tonight at Barclays' : 'Next at Barclays';
   const heroTitle = isTonight
     ? `Why you can't find parking on ${todayFormatted}`
-    : heroHeading;
+    : 'Next at Barclays';
   const heroSubtitle = isTonight
     ? ''
     : nextEvent
@@ -265,7 +260,6 @@ export default function HomePage() {
 
   const formatLocalTime = (timeStr?: string) => {
     if (!timeStr) return null;
-    // Parse as time only
     try {
       const date = parseISO(`1970-01-01T${timeStr}`);
       return format(date, 'h:mm a');
@@ -324,7 +318,7 @@ export default function HomePage() {
               letterSpacing: '-0.5px',
             }}
           >
-            Barclays Tonight – Barclays Center Events in Brooklyn
+            Barclays Tonight – What&apos;s On at Barclays Center in Brooklyn
           </h1>
           <p
             style={{
@@ -333,8 +327,8 @@ export default function HomePage() {
               marginBottom: '12px',
             }}
           >
-            The lowdown on what 15,000+ people are up to (and why you can&apos;t find
-            parking).
+            See what&apos;s on at Barclays Center tonight and this week – plus where to
+            park, how to get there, and where to eat nearby.
           </p>
 
           {/* Live Event Counter */}
@@ -384,7 +378,7 @@ export default function HomePage() {
           padding: '32px 20px 40px',
         }}
       >
-        {/* Error banner if events fail to load */}
+        {/* Error banner */}
         {fetchError && (
           <div
             style={{
@@ -412,8 +406,8 @@ export default function HomePage() {
                   'linear-gradient(135deg, rgba(107, 45, 92, 0.85) 0%, rgba(255, 107, 157, 0.75) 100%)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '20px',
-                padding: '30px',
-                marginBottom: '20px',
+                padding: '28px',
+                marginBottom: '16px',
                 boxShadow: '0 8px 24px rgba(107,45,92,0.15)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
               }}
@@ -424,7 +418,7 @@ export default function HomePage() {
                   color: 'rgba(255,255,255,0.85)',
                   marginBottom: '4px',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '0.12em',
                   fontWeight: 600,
                 }}
               >
@@ -453,6 +447,37 @@ export default function HomePage() {
                   {heroSubtitle}
                 </p>
               )}
+
+              {/* Inline guide links */}
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: 'rgba(255,255,255,0.9)',
+                  marginTop: '8px',
+                }}
+              >
+                Before you go:{' '}
+                <Link
+                  href="/how-to-get-to-barclays-center"
+                  style={{ color: '#B4E7CE', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  How to get there
+                </Link>
+                {' · '}
+                <Link
+                  href="/barclays-center-parking"
+                  style={{ color: '#B4E7CE', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Parking guide
+                </Link>
+                {' · '}
+                <Link
+                  href="/restaurants-near-barclays-center"
+                  style={{ color: '#B4E7CE', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Where to eat
+                </Link>
+              </p>
             </div>
 
             <div
@@ -627,7 +652,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* PLAN YOUR NIGHT / GUIDES ROW */}
+        {/* PLAN YOUR NIGHT */}
         <section style={{ marginBottom: '40px' }}>
           <div
             className="plan-grid"
@@ -711,7 +736,7 @@ export default function HomePage() {
                   display: 'inline-block',
                 }}
               >
-                Where to park near Barclays →
+                Parking guide →
               </Link>
               <Link
                 href="/restaurants-near-barclays-center"
@@ -726,7 +751,7 @@ export default function HomePage() {
                   display: 'inline-block',
                 }}
               >
-                Where to eat &amp; drink nearby →
+                Where to eat &amp; drink →
               </Link>
             </div>
           </div>
@@ -1089,7 +1114,7 @@ export default function HomePage() {
                   borderRadius: '50%',
                 }}
               />
-            <h2
+              <h2
                 style={{
                   fontSize: '22px',
                   fontWeight: 600,
@@ -1218,7 +1243,6 @@ export default function HomePage() {
             Fort Greene, Prospect Heights, and all of Brooklyn.
           </p>
 
-          {/* Footer nav to guides */}
           <div
             style={{
               display: 'flex',
