@@ -49,6 +49,7 @@ export default function HomePage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch events
   useEffect(() => {
     let cancelled = false;
 
@@ -143,6 +144,7 @@ export default function HomePage() {
   const todayDate = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
   const todayFormatted = useMemo(() => format(new Date(), 'EEEE, MMMM d'), []);
 
+  // Helper: assume events with no time are evening
   const isNighttimeEvent = (event: Event) => {
     const timeStr = event.dates.start.localTime;
     if (!timeStr) return true;
@@ -153,6 +155,13 @@ export default function HomePage() {
   const getImageUrl = (event: Event) =>
     event.images?.[0]?.url ||
     'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80&auto=format';
+
+  // NEW: normalize event start time into a simple bucket (HH:MM) so we can dedupe
+  const getTimeBucket = (timeStr?: string) => {
+    if (!timeStr) return 'no-time';
+    const [hh, mm] = timeStr.split(':');
+    return `${hh}:${mm}`;
+  };
 
   const eventsThisWeekIds = useMemo(
     () =>
@@ -167,9 +176,22 @@ export default function HomePage() {
     [events],
   );
 
-  const todayEvents = useMemo(
+  // Raw today events
+  const rawTodayEvents = useMemo(
     () => events.filter((e) => e.dates.start.localDate === todayDate && isNighttimeEvent(e)),
     [events, todayDate],
+  );
+
+  // NEW: de‑duplicate today events by time bucket
+  const todayEvents = useMemo(
+    () =>
+      rawTodayEvents.reduce<Event[]>((acc, event) => {
+        const bucket = getTimeBucket(event.dates.start.localTime);
+        const already = acc.some((e) => getTimeBucket(e.dates.start.localTime) === bucket);
+        if (!already) acc.push(event);
+        return acc;
+      }, []),
+    [rawTodayEvents],
   );
 
   const weekEvents = useMemo(
@@ -202,7 +224,21 @@ export default function HomePage() {
   );
 
   const nextEvent = events[0];
-  const heroEvents = todayEvents.length > 0 ? todayEvents : nextEvent ? [nextEvent] : [];
+
+  // Build heroEvents using deduped todayEvents or fallback to nextEvent
+  const rawHeroEvents = todayEvents.length > 0 ? todayEvents : nextEvent ? [nextEvent] : [];
+
+  // Just in case: also dedupe hero set by time bucket
+  const heroEvents = useMemo(
+    () =>
+      rawHeroEvents.reduce<Event[]>((acc, event) => {
+        const bucket = getTimeBucket(event.dates.start.localTime);
+        const already = acc.some((e) => getTimeBucket(e.dates.start.localTime) === bucket);
+        if (!already) acc.push(event);
+        return acc;
+      }, []),
+    [rawHeroEvents],
+  );
 
   const isTonight = todayEvents.length > 0;
 
